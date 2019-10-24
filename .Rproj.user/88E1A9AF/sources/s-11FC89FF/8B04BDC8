@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1571872169412.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8B04BDC8",
+    "lastKnownWriteTime" : 8,
+    "last_content_update" : 1571872169412,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "8FD0F040",
+        "caption" : "dfMinQualPlot2",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=dfMinQualPlot2&cache_key=8FD0F040",
+        "displayedObservations" : 21,
+        "environment" : "",
+        "expression" : "dfMinQualPlot2",
+        "object" : "dfMinQualPlot2",
+        "preview" : 0,
+        "totalObservations" : 21,
+        "variables" : 2
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1571876259162.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "788E99BF",
+    "lastKnownWriteTime" : 1571503014,
+    "last_content_update" : 1571876259162,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "C14221DB",
+        "caption" : "freqCat",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=freqCat&cache_key=C14221DB",
+        "displayedObservations" : "456",
+        "environment" : "",
+        "expression" : "freqCat",
+        "object" : "freqCat",
+        "preview" : "0",
+        "totalObservations" : "456",
+        "variables" : "2"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 12,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

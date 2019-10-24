@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1571874262973.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "EC6BE441",
+    "lastKnownWriteTime" : 1571503014,
+    "last_content_update" : 1571874262973,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "id" : "9a8110020fe341e3a4516f928b85632b",
+        "name" : "freq",
+        "title" : "freq"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "object_explorer"
+}
