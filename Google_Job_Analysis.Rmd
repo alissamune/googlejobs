@@ -1,0 +1,205 @@
+---
+title: "Google_Job_Analysis"
+author: "Alissa Munerato"
+date: "10/30/2019"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Todas as áreas
+
+Ao explorar o dataset, percebe-se que as vagas oferecem padrões de escrita. A primeira oportunidade encontrada ao analisar as qualidades mínimas necessárias para o Google, é o fato de uma grande quantia especificar os anos de experiência necessários para os candidatos. 
+
+Dessa maneira, foi possível quantificar a experiência necessária nas 12 maiores categorias:
+
+```{r message=FALSE}
+setwd("~/Analysis/")
+
+# necessary libraries
+library(tidyverse)
+library(tidytext)
+library(formattable)
+
+# loads dataset
+df <- readxl::read_excel("~/Analysis/job_skills.xlsx")
+
+```
+
+
+```{r message=FALSE}
+colnames(df) <- c("company", "title", "category", "location",
+                  "responsibilities", "minimumQualifications", 
+                  "preferredQualifications")
+
+# Experience on Categories -------------------------------------------------
+
+# Minimum Qualifications on Categories
+dfMinQual <- df[,c("company", "title", "category", "location", "minimumQualifications")]
+dfMinQual <- separate_rows(dfMinQual,"minimumQualifications", sep = "\n")
+
+# Testing for data homogeneity
+dfMinQual <- dfMinQual[str_detect(dfMinQual$minimumQualifications, regex("experience", ignore_case = TRUE)),]
+
+# How many years of experience are necessary for these jobs?
+dfMinQual$necessaryYears <- str_extract(dfMinQual$minimumQualifications, "[0-9]*")
+dfMinQual$necessaryYears[dfMinQual$necessaryYears == ""] <- "Undefined"
+
+# Calculating how many times specific years were mentioned
+dfMinQualPlot <- dfMinQual[,c("category", "necessaryYears")]
+dfMinQualPlot <- dfMinQualPlot %>% 
+  group_by(category, necessaryYears) %>% 
+  add_tally() %>% 
+  unique()
+
+# Filtering rows in which experience wasn't necessary or was undefined
+dfMinQualPlot <- dfMinQualPlot[dfMinQualPlot$necessaryYears != "Undefined",]
+
+# Preparing for dataviz
+dfMinQualPlot2 <- dfMinQualPlot %>% 
+  group_by(category) %>% 
+  summarise(n = sum(n)) %>% 
+  arrange(desc(n)) %>% 
+  ungroup()
+
+# Classifying top 12
+top12 <- head(dfMinQualPlot2$category, 12)
+
+dfMinQualPlot <- dfMinQualPlot[dfMinQualPlot$category %in% top12,]
+
+dfMinQualPlot$category <- factor(dfMinQualPlot$category, levels = top12)
+
+dfMinQualPlot <- arrange(dfMinQualPlot, category)
+
+dfMinQualPlot$n <- as.numeric(dfMinQualPlot$n)
+colnames(dfMinQualPlot) <- c("category", "necessaryYears", "numberOfTimes")
+dfMinQualPlot$necessaryYears <- as.numeric(dfMinQualPlot$necessaryYears)
+```
+
+``` {r fig.height = 10, fig.width = 10, fig.align = "center", message=FALSE}
+# DataViz
+ggplot(dfMinQualPlot, aes(x = reorder(dfMinQualPlot$necessaryYears, necessaryYears), y = dfMinQualPlot$numberOfTimes), fill = "category") +
+  geom_bar(stat = 'identity') +
+  xlab("Necessary years of experience") +
+  ylab("Number of times requested") +
+  ggtitle("Necessary years of experience x Number of times they were requested by Category") +
+  theme_bw() +
+  facet_wrap(.~ category, nrow = 3)
+```
+
+Percebe-se que áreas como Marketing e Sales mencionam anos de experiência mais vezes, enquanto áreas relacionadas à tecnologia, como Technical Solution (a única no top 12), mencionam pouco. De modo a olhar com mais cuidado para a questão, foi construída uma tabela, com as medianas dos anos de experiência por categoria:
+
+```{r fig.height = 10, fig.width = 10, fig.align = "center", message=FALSE}
+dfMinQualPlotMedian <- dfMinQualPlot %>% 
+  group_by(category) %>% 
+  summarise(median = median(necessaryYears)) %>% 
+  arrange(desc(median))
+colnames(dfMinQualPlotMedian) <- c("Category", "Median")
+
+formattable(dfMinQualPlotMedian)
+```
+
+Levantou-se a hipótese de que as áreas Tech se comunicam de outra maneira com seus candidatos e que a experiência necessária seja requisitada através de outros recursos. 
+
+O caminho mais lógico é verificar as habilidades mínimas necessárias, o que nos leva à próxima etapa da análise.
+
+## Áreas da Tecnologia
+
+``` {r, message=FALSE}
+# Necessary library for DataViz
+library(wordcloud2)
+
+# All of the categories
+areas <- unique(df$category)
+
+# Only technological categories
+techAreas <- c("Technical Solutions" ,"Hardware Engineering" ,"Software Engineering","Data Center & Network","Technical Infrastructure", "IT & Data Management","Network Engineering")
+
+# Subsetting dataset based on Tech categories
+dfMinQualTech <- dfMinQual[dfMinQual$category %in% techAreas,]
+
+# Data cleaning
+dfMinQualTech$minimumQualifications <- str_replace_all(dfMinQualTech$minimumQualifications, ",", " ")
+dfMinQualTech$minimumQualifications <- str_replace_all(dfMinQualTech$minimumQualifications, "\\.", " ")
+```
+
+De modo a elencar quais linguagens de programação foram requisitadas é necessário fazer um levantamento de todas as linguagens disponíveis, para evitar a exclusão de linguagens menos populares. Isso foi feito através do dataset criado pelo usuário @jamhall[https://github.com/jamhall/programming-languages-csv], que extraiu a lista de linguagens do Wikipedia.
+
+```{r message=FALSE}
+languages <- read_csv("~/Analysis/languages.csv")
+
+
+# Applying REGEX
+languages$name <- str_replace_all(languages$name, "\\/", "[\\\\/]")
+languages$name <- str_replace_all(languages$name, regex("\\+"), "[\\\\+]")
+languages$name <- str_replace_all(languages$name, "\\#", "[\\\\#]")
+languages$name <- str_replace_all(languages$name, "\\!", "[\\\\!]")
+languages$name <- str_replace_all(languages$name, "\\.", "[\\\\.]")
+languages$name <- str_replace_all(languages$name, "\\(", "[\\\\(]")
+languages$name <- str_replace_all(languages$name, "\\)", "[\\\\)]")
+languages$name <- str_replace_all(languages$name, "\\-", "[\\\\-]")
+languages$name <- str_replace_all(languages$name, "\\@", "[\\\\@]")
+techLanguages <- paste(languages$name, collapse = "[,\\s\\)])|(\\b")
+techLanguages <- paste0("(\\b",techLanguages,"[,\\s\\)])")
+
+# Extracting programming languages into a new column
+dfMinQualTech$languages <- str_extract_all(dfMinQualTech$minimumQualifications, regex(techLanguages, ignore_case = FALSE))
+
+# Unlisting and cleaning the results
+requiredLanguages <- unnest(dfMinQualTech, languages)
+requiredLanguages$languages <- str_remove_all(requiredLanguages$languages, "\\)")
+requiredLanguages$languages <- str_replace_all(requiredLanguages$languages, " ", "")
+requiredLanguages <- requiredLanguages[-which(requiredLanguages$languages == "D"|requiredLanguages$languages == "T"),]
+
+# Preparring dataset for DataViz
+requiredLanguagesGraph <- requiredLanguages %>%
+  select(category, languages) %>%  
+  group_by(category, languages) %>% 
+  add_tally() %>% 
+  unique()
+```
+
+``` {r message=FALSE}
+requiredLanguagesWordcloud <- requiredLanguages %>%
+  select(languages) %>%  
+  group_by(languages) %>% 
+  add_tally() %>% 
+  unique()
+
+wordcloud2(requiredLanguagesWordcloud)
+
+```
+
+De um modo geral, grande parte das áreas pede 3 principais linguagens: Python, Java e C++. 
+
+Ainda seria necessário avaliar quais linguagens têm correlação entre si, mas a tendência é que as 3 mencionadas acima ocorram simultaneamente na maioria das vagas.
+
+
+```{r fig.height = 10, fig.width = 10, fig.align = "center", message=FALSE}
+ggplot(requiredLanguagesGraph, aes(x = reorder(languages, -n), y = n, fill = category)) + 
+  geom_bar(stat = 'identity', position = 'dodge') +
+  xlab("Languages") +
+  ylab("Count") +
+  labs(fill = "Category") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5) ) +
+  facet_wrap(~category, scales = 'free')
+```
+
+Observando mais a fundo, os 3 primeiros gráficos representam áreas que não contêm tanta representatividade quanto as dos outros, seja por conta da menor disponibilidade de vagas, seja pelo menor número de linguagens pedidas. 
+
+## Conclusões e considerações finais
+
+Com base nas informações exploradas acima, é interessante considerar a criação de uma *escala de experiência*. Por vezes, a experiência é quantificada em anos, em outras em grau de escolaridade. No caso de vagas mais técnicas, os requisitos vão desde linguagens a tipos específicos de infraestrutura. 
+
+A lógica de *rankeamento* em níveis de experiência ajuda a diversificar o processo seletivo e não prende a empresa em conjuntos de pré-requisitos específicos, o que pode se tornar ineficiente quando se trata de vagas com requisitos mais maleáveis.  
+
+Após esta análise exploratória, seria interessante considerar uma análise de correlação entre as linguagens e aprofundar o raciocínio através de outros recortes, como país, responsabilidades e posição. Assim, seria possível identificar oportunidades acionáveis em todas as variáveis, encontrando a relação entre cada grupo de características.
+
+*Todo código está disponível ao clicar nos botões "Code" de cada seção*
+
+
+--
